@@ -33,6 +33,8 @@ const envSchema = z
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
     TRUST_PROXY: booleanString,
     WHATSAPP_CLOUD_ENABLED: booleanString,
+    WHATSAPP_BOT_ENABLED: booleanString,
+    WHATSAPP_BOT_SESSION_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
     WHATSAPP_GRAPH_API_VERSION: z.string().regex(/^v\d+\.\d+$/, 'WHATSAPP_GRAPH_API_VERSION deve seguir o formato vXX.X').default('v26.0'),
     WHATSAPP_VERIFY_TOKEN: z.string().default(''),
     WHATSAPP_APP_SECRET: z.string().default(''),
