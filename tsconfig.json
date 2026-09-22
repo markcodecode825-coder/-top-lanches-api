@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "rootDir": ".",
     "outDir": "dist",
     "strict": true,
@@ -12,7 +12,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
