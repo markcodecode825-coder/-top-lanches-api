@@ -10,7 +10,7 @@ const swaggerPlugin: FastifyPluginAsync = async (app) => {
       info: {
         title: 'Top Lanches API',
         description: 'API REST oficial e open source da Top Lanches.',
-        version: '1.2.0',
+        version: '1.3.0',
         license: { name: 'MIT' }
       },
       tags: [
