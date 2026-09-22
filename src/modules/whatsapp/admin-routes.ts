@@ -98,6 +98,8 @@ const adminWhatsAppRoutes: FastifyPluginAsync = async (app) => {
           type: 'object',
           required: [
             'enabled',
+            'botEnabled',
+            'botSessionTtlMinutes',
             'graphApiVersion',
             'httpTimeoutMs',
             'phoneNumberIdConfigured',
@@ -108,6 +110,8 @@ const adminWhatsAppRoutes: FastifyPluginAsync = async (app) => {
           ],
           properties: {
             enabled: { type: 'boolean' },
+            botEnabled: { type: 'boolean' },
+            botSessionTtlMinutes: { type: 'integer' },
             graphApiVersion: { type: 'string' },
             httpTimeoutMs: { type: 'integer' },
             phoneNumberIdConfigured: { type: 'boolean' },
