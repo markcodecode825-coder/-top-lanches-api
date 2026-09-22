@@ -32,7 +32,7 @@ export const apiRootRoutes: FastifyPluginAsync = async (app) => {
     schema: { tags: ['system'], summary: 'Metadados da API', response: { 200: apiRootResponseJsonSchema, 500: errorResponseJsonSchema } }
   }, async () => ({
     name: 'Top Lanches API',
-    version: '1.2.0',
+    version: '1.3.0',
     docs: '/docs',
     health: '/health'
   }));
