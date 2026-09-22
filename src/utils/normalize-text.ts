@@ -3,15 +3,22 @@ export function normalizeText(value: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('pt-BR')
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\p{Cc}/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-export function normalizeSearchQuery(value: string): string {
+export function normalizeSearchQuery(
+  value: string
+): string {
   return normalizeText(value).slice(0, 100);
 }
 
-export function escapeSqlLike(value: string): string {
-  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+export function escapeSqlLike(
+  value: string
+): string {
+  return value.replace(
+    /[\\%_]/g,
+    (character) => `\\${character}`
+  );
 }

@@ -450,7 +450,7 @@ export async function createOrder(
     );
 
     return {
-      order: order as OrderWithRelations,
+      order,
       reused: false
     };
   } catch (error) {
