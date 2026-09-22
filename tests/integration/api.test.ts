@@ -215,6 +215,24 @@ describe('Top Lanches API', () => {
     expect(body.items[0]).toMatchObject({ unitPriceInCents: 1500, subtotalInCents: 3000 });
   });
 
+  it('exige endereço para pedidos de delivery', async () => {
+    const product = await getProduct('x-burguer');
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/orders',
+      payload: {
+        customer: { name: 'Maria', phone: '83999999999' },
+        serviceMode: 'delivery',
+        paymentMethod: 'PIX',
+        items: [{ productId: product.id, quantity: 1 }]
+      }
+    });
+    expect(response.statusCode).toBe(422);
+    expect(response.json()).toMatchObject({
+      error: { code: 'VALIDATION_ERROR', message: 'Endereço é obrigatório para delivery' }
+    });
+  });
+
   it('permite pedido presencial apenas com nome e forma de pagamento, sem telefone ou mesa', async () => {
     const product = await getProduct('x-burguer');
     const response = await app.inject({
