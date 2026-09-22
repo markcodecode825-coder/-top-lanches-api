@@ -33,7 +33,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Production dependency audit
-        run: npm audit --omit=dev || true
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Generate Prisma Client
         run: npm run prisma:generate
