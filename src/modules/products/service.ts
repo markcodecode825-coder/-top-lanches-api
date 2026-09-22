@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { AppError } from '../../errors/app-error';
 import { clampLimit, paginationMeta } from '../../utils/pagination';
 import { decimalInputToCents } from '../../utils/money';
