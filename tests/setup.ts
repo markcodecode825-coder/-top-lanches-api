@@ -2,6 +2,7 @@ import { beforeEach } from 'vitest';
 import { prisma } from '../src/database/prisma';
 
 beforeEach(async () => {
+  await prisma.whatsappConversation.deleteMany();
   await prisma.whatsappMessage.deleteMany();
   await prisma.whatsappWebhookEvent.deleteMany();
   await prisma.order.deleteMany();
