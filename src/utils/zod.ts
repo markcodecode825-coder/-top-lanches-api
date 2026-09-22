@@ -12,9 +12,6 @@ export function parseInput<TSchema extends z.ZodTypeAny>(
     'VALIDATION_ERROR',
     422,
     'Dados inválidos',
-    result.error.issues.map((issue) => ({
-      path: issue.path.join('.'),
-      message: issue.message
-    }))
+    result.error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message }))
   );
 }

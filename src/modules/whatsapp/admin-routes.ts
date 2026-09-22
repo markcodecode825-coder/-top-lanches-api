@@ -26,8 +26,8 @@ const sendTextBodyJsonSchema = {
   required: ['to', 'text'],
   additionalProperties: false,
   properties: {
-    to: { type: 'string', example: '5583999999999' },
-    text: { type: 'string', minLength: 1, maxLength: 4096, example: 'Olá!' },
+    to: { type: 'string' },
+    text: { type: 'string', minLength: 1, maxLength: 4096 },
     previewUrl: { type: 'boolean', default: false }
   }
 } as const;
@@ -37,9 +37,9 @@ const sendTemplateBodyJsonSchema = {
   required: ['to', 'templateName', 'languageCode'],
   additionalProperties: false,
   properties: {
-    to: { type: 'string', example: '5583999999999' },
-    templateName: { type: 'string', example: 'nome_do_template_aprovado' },
-    languageCode: { type: 'string', example: 'pt_BR' },
+    to: { type: 'string' },
+    templateName: { type: 'string' },
+    languageCode: { type: 'string' },
     components: { type: 'array', items: { type: 'object', additionalProperties: true } }
   }
 } as const;
@@ -61,8 +61,8 @@ const sendResponseSchema = {
   type: 'object',
   required: ['messageId', 'recipientWaId'],
   properties: {
-    messageId: { type: 'string', nullable: true, example: 'wamid.example' },
-    recipientWaId: { type: 'string', nullable: true, example: '5583999999999' }
+    messageId: { type: 'string', nullable: true },
+    recipientWaId: { type: 'string', nullable: true }
   }
 } as const;
 

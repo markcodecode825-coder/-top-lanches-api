@@ -23,27 +23,20 @@ export function registerErrorHandler(app: FastifyInstance): void {
           message: error.message,
           statusCode: error.statusCode,
           requestId: request.id,
-          ...(error.details === undefined
-            ? {}
-            : { details: error.details })
+          ...(error.details === undefined ? {} : { details: error.details })
         }
       });
     }
 
-    const fastifyError = error as {
-      validation?: unknown;
-      statusCode?: number;
-      code?: unknown;
-    };
-
-    if (fastifyError.validation) {
+    const fastifyValidation = (error as { validation?: unknown }).validation;
+    if (fastifyValidation) {
       return reply.status(422).send({
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Dados inválidos',
           statusCode: 422,
           requestId: request.id,
-          details: fastifyError.validation
+          details: fastifyValidation
         }
       });
     }
@@ -55,18 +48,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
           message: 'Dados inválidos',
           statusCode: 422,
           requestId: request.id,
-          details: error.issues.map((issue) => ({
-            path: issue.path.join('.'),
-            message: issue.message
-          }))
+          details: error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message }))
         }
       });
     }
 
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return reply.status(409).send({
         error: {
           code: 'CONFLICT',
@@ -77,7 +64,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    if (fastifyError.statusCode === 429) {
+    const statusCode =
+      typeof error === 'object' && error !== null && 'statusCode' in error
+        ? Number((error as { statusCode?: unknown }).statusCode)
+        : undefined;
+
+    if (statusCode === 429) {
       return reply.status(429).send({
         error: {
           code: 'RATE_LIMIT_EXCEEDED',
@@ -88,39 +80,26 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    if (
-      fastifyError.statusCode === 400 ||
-      fastifyError.statusCode === 413
-    ) {
-      return reply.status(fastifyError.statusCode).send({
+    if (statusCode === 400 || statusCode === 413) {
+      return reply.status(statusCode).send({
         error: {
           code: 'VALIDATION_ERROR',
-          message:
-            fastifyError.statusCode === 413
-              ? 'Payload excede o limite permitido'
-              : 'Requisição inválida',
-          statusCode: fastifyError.statusCode,
+          message: statusCode === 413 ? 'Payload excede o limite permitido' : 'Requisição inválida',
+          statusCode,
           requestId: request.id
         }
       });
     }
 
-    const errorType =
-      error instanceof Error ? error.name : typeof error;
+    const errorType = error instanceof Error ? error.name : typeof error;
     const errorCode =
-      typeof fastifyError.code === 'string'
-        ? fastifyError.code
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code ?? '')
         : undefined;
-
     request.log.error(
-      {
-        requestId: request.id,
-        errorType,
-        ...(errorCode ? { errorCode } : {})
-      },
+      { requestId: request.id, errorType, ...(errorCode ? { errorCode } : {}) },
       'Unhandled request error'
     );
-
     return reply.status(500).send({
       error: {
         code: 'INTERNAL_SERVER_ERROR',

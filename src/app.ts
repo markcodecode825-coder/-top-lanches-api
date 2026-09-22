@@ -28,13 +28,6 @@ import whatsappRoutes from './modules/whatsapp/routes';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
-    ajv: {
-      customOptions: {
-        // OpenAPI annotation keywords such as "example" are documentation
-        // metadata and must not make JSON Schema compilation fail.
-        strictSchema: false
-      }
-    },
     logger: {
       level: env.LOG_LEVEL,
       redact: {

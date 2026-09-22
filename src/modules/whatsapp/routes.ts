@@ -12,9 +12,9 @@ const verificationQueryJsonSchema = {
   type: 'object',
   required: ['hub.mode', 'hub.verify_token', 'hub.challenge'],
   properties: {
-    'hub.mode': { type: 'string', example: 'subscribe' },
-    'hub.verify_token': { type: 'string', example: 'seu-token-de-verificacao' },
-    'hub.challenge': { type: 'string', example: '123456789' }
+    'hub.mode': { type: 'string' },
+    'hub.verify_token': { type: 'string' },
+    'hub.challenge': { type: 'string' }
   }
 } as const;
 
@@ -61,7 +61,7 @@ const whatsappRoutes: FastifyPluginAsync = async (app) => {
         200: {
           type: 'object',
           required: ['received'],
-          properties: { received: { type: 'boolean', example: true } }
+          properties: { received: { type: 'boolean' } }
         },
         401: errorResponseJsonSchema,
         503: errorResponseJsonSchema
