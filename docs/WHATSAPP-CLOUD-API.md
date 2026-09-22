@@ -18,7 +18,10 @@ A integração vem desativada por padrão e não envia mensagens automaticamente
 - registro do Phone Number ID com PIN de seis dígitos;
 - timeout configurável para chamadas à Graph API;
 - credenciais somente por variáveis de ambiente;
-- nenhuma resposta automática/bot inventada.
+- atendimento automático opcional por texto, com estado persistente de conversa;
+- fluxo de pedido: atendimento, nome, categoria, produto, quantidade, carrinho, pagamento, troco, endereço de delivery e confirmação;
+- criação do pedido real na API ao final do fluxo;
+- comando `CANCELAR`, `REINICIAR`, `MENU` ou `INICIO` para recomeçar a conversa.
 
 ## 2. Variáveis de ambiente
 
@@ -26,6 +29,7 @@ Preencha no servidor:
 
 ```dotenv
 WHATSAPP_CLOUD_ENABLED=true
+WHATSAPP_BOT_ENABLED=true
 WHATSAPP_GRAPH_API_VERSION=v26.0
 WHATSAPP_VERIFY_TOKEN=gere-um-token-longo-e-aleatorio
 WHATSAPP_APP_SECRET=app-secret-da-meta
@@ -189,17 +193,23 @@ Authorization: Bearer SEU_JWT_ADMIN
 
 A resposta informa apenas flags como `accessTokenConfigured` e `appSecretConfigured`. Os valores secretos nunca são retornados.
 
-## 12. O que ainda não é um bot automático
+## 12. Atendimento automático de pedidos
 
-A integração de transporte está pronta, mas nenhuma lógica de conversa foi inventada. Por exemplo, receber "cardápio" não gera uma resposta automática ainda.
+Quando `WHATSAPP_BOT_ENABLED=true`, mensagens recebidas pelo webhook entram no fluxo automático de pedidos.
 
-Uma camada de atendimento pode ser adicionada depois para usar os módulos existentes de:
+O fluxo atual conduz o cliente por:
 
-- status de funcionamento;
-- cardápio;
-- pesquisa;
-- disponibilidade;
-- criação de pedidos;
-- consulta de pedidos.
+1. Delivery, Retirada ou Presencial;
+2. nome;
+3. categoria;
+4. produto e quantidade;
+5. carrinho;
+6. Pix ou Dinheiro;
+7. troco quando necessário;
+8. endereço estruturado no Delivery;
+9. revisão e confirmação;
+10. criação real do pedido no PostgreSQL pela mesma regra de negócio usada no endpoint `POST /api/v1/orders`.
 
-Isso deve ser definido como um fluxo de negócio separado para não misturar conexão com WhatsApp e regras do atendimento.
+O estado da conversa fica persistido em `WhatsappConversation`, portanto um reinício da aplicação não perde o carrinho em andamento. Reentregas do mesmo webhook continuam protegidas pela deduplicação já existente.
+
+O bot só deve ser ativado depois que as credenciais reais da Meta estiverem configuradas e o webhook estiver validado.
