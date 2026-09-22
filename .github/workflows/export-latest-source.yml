@@ -1,0 +1,31 @@
+name: Export latest source
+
+on:
+  push:
+    branches:
+      - export/latest-source
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Create source archive
+        run: |
+          zip -r top-lanches-api-completo-atualizado.zip .             -x ".git/*"             -x "node_modules/*"
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: top-lanches-api-completo-atualizado
+          path: top-lanches-api-completo-atualizado.zip
+          if-no-files-found: error
+          retention-days: 7
