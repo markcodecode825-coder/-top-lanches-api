@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { categoryBodyJsonSchema, categoryCreateBodyJsonSchema, idParamsSchema } from '../../docs/request-schemas';
-import { categoriesResponseJsonSchema, categoryResponseJsonSchema, standardErrorResponses } from '../../docs/response-schemas';
+import { categoriesResponseJsonSchema, categoryResponseJsonSchema, noContentResponseJsonSchema, standardErrorResponses } from '../../docs/response-schemas';
 import { AppError } from '../../errors/app-error';
 import { slugify } from '../../utils/slug';
 import { parseInput } from '../../utils/zod';
@@ -43,7 +43,7 @@ const adminCategoryRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.delete('/categories/:id', {
-    schema: { tags: ['admin'], security: [{ bearerAuth: [] }], summary: 'Desativa logicamente uma categoria', params: idParamsSchema, response: { ...standardErrorResponses } }
+    schema: { tags: ['admin'], security: [{ bearerAuth: [] }], summary: 'Desativa logicamente uma categoria', params: idParamsSchema, response: { 204: noContentResponseJsonSchema, ...standardErrorResponses } }
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const existing = await app.prisma.category.findUnique({ where: { id } });
