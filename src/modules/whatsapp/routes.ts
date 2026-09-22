@@ -4,6 +4,7 @@ import { errorResponseJsonSchema } from '../../docs/response-schemas';
 import { AppError } from '../../errors/app-error';
 import { parseInput } from '../../utils/zod';
 import { getWhatsAppRawBody, registerWhatsAppJsonParser } from './raw-json';
+import { handleWhatsAppBotMessage } from './bot';
 import { persistWebhookSummary } from './persistence';
 import { webhookVerificationQuerySchema } from './schemas';
 import { summarizeWebhook, verifyWebhookChallenge, verifyWebhookSignature } from './service';
@@ -78,6 +79,20 @@ const whatsappRoutes: FastifyPluginAsync = async (app) => {
 
     const summary = summarizeWebhook(request.body);
     const persistence = await persistWebhookSummary(app.prisma, rawBody, summary);
+    if (!persistence.duplicate && env.WHATSAPP_BOT_ENABLED) {
+      for (const message of summary.messages) {
+        try {
+          await handleWhatsAppBotMessage(app.prisma, message);
+        } catch (error) {
+          const errorType = error instanceof Error ? error.name : typeof error;
+          request.log.error(
+            { requestId: request.id, providerMessageId: message.id, errorType },
+            'WhatsApp bot processing failed'
+          );
+        }
+      }
+    }
+
     request.log.info(
       {
         requestId: request.id,
