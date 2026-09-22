@@ -311,6 +311,8 @@ export async function subscribeAppToWaba(fetchImpl: typeof fetch = fetch): Promi
 export function getWhatsAppConfigurationStatus() {
   return {
     enabled: env.WHATSAPP_CLOUD_ENABLED,
+    botEnabled: env.WHATSAPP_BOT_ENABLED,
+    botSessionTtlMinutes: env.WHATSAPP_BOT_SESSION_TTL_MINUTES,
     graphApiVersion: env.WHATSAPP_GRAPH_API_VERSION,
     httpTimeoutMs: env.WHATSAPP_HTTP_TIMEOUT_MS,
     phoneNumberIdConfigured: env.WHATSAPP_PHONE_NUMBER_ID.length > 0,
