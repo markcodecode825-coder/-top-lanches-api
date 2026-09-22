@@ -551,3 +551,6 @@ Esse fluxo é a forma recomendada de confirmar em runtime que a API continua ín
 ## Licença
 
 MIT. Consulte `LICENSE`.
+
+
+> Validação automática: build, lint e testes são executados pelo GitHub Actions antes do deploy.
