@@ -6,16 +6,20 @@ const brlFormatter = new Intl.NumberFormat('pt-BR', {
   minimumFractionDigits: 2
 });
 
+function normalizeCurrencySpacing(value: string): string {
+  return value.replace(/[\u00a0\u202f]/g, ' ');
+}
+
 export function centsToApi(cents: number): { price: number; priceInCents: number; priceFormatted: string } {
   return {
     price: Number((cents / 100).toFixed(2)),
     priceInCents: cents,
-    priceFormatted: brlFormatter.format(cents / 100)
+    priceFormatted: normalizeCurrencySpacing(brlFormatter.format(cents / 100))
   };
 }
 
 export function formatCents(cents: number): string {
-  return brlFormatter.format(cents / 100);
+  return normalizeCurrencySpacing(brlFormatter.format(cents / 100));
 }
 
 export function decimalInputToCents(value: number | string): number {
