@@ -24,8 +24,8 @@ export const productsQueryJsonSchema = {
     category: { type: 'string' },
     available: { type: 'string', enum: ['true', 'false'] },
     featured: { type: 'string', enum: ['true', 'false'] },
-    minPrice: { type: 'string', example: '5.00' },
-    maxPrice: { type: 'string', example: '20.00' },
+    minPrice: { type: 'string' },
+    maxPrice: { type: 'string' },
     search: { type: 'string' },
     sort: {
       type: 'string',
@@ -40,7 +40,7 @@ export const searchQueryJsonSchema = {
   type: 'object',
   required: ['q'],
   properties: {
-    q: { type: 'string', minLength: 1, maxLength: 100, example: 'agua' },
+    q: { type: 'string', minLength: 1, maxLength: 100 },
     limit: { type: 'integer', minimum: 1, maximum: 50, default: 30 }
   }
 } as const;
@@ -50,8 +50,8 @@ export const loginBodyJsonSchema = {
   required: ['email', 'password'],
   additionalProperties: false,
   properties: {
-    email: { type: 'string', format: 'email', example: 'admin@example.com' },
-    password: { type: 'string', format: 'password', example: 'change-me' }
+    email: { type: 'string', format: 'email' },
+    password: { type: 'string', format: 'password' }
   }
 } as const;
 
@@ -64,15 +64,14 @@ export const createOrderBodyJsonSchema = {
       type: 'object',
       required: ['name'],
       properties: {
-        name: { type: 'string', example: 'João' },
-        phone: { type: 'string', nullable: true, example: '83999999999' }
+        name: { type: 'string' },
+        phone: { type: 'string', nullable: true }
       }
     },
-    serviceMode: { type: 'string', description: 'Valores aceitos: delivery, pickup, dine_in', example: 'pickup' },
-    paymentMethod: { type: 'string', description: 'Valores aceitos: PIX, CASH', example: 'PIX' },
+    serviceMode: { type: 'string', description: 'Valores aceitos: delivery, pickup, dine_in' },
+    paymentMethod: { type: 'string', description: 'Valores aceitos: PIX, CASH' },
     cashChangeFor: {
       description: 'Valor de troco para CASH. É ignorado integralmente quando paymentMethod é PIX.',
-      example: 50
     },
     items: {
       type: 'array',
@@ -112,7 +111,7 @@ export const businessPatchBodyJsonSchema = {
     whatsappFormatted: { type: 'string' },
     instagram: { type: 'string' },
     address: { type: 'string' },
-    timezone: { type: 'string', example: 'America/Fortaleza' }
+    timezone: { type: 'string' }
   }
 } as const;
 
@@ -129,8 +128,8 @@ export const hoursBodyJsonSchema = {
           type: 'object',
           required: ['open', 'close'],
           properties: {
-            open: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d$', example: '07:00' },
-            close: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d$', example: '16:00' }
+            open: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' },
+            close: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' }
           }
         }
       }
@@ -166,7 +165,7 @@ export const productBodyJsonSchema = {
     slug: { type: 'string' },
     categoryId: { type: 'string', format: 'uuid' },
     description: { type: 'string', nullable: true },
-    priceInCents: { type: 'integer', minimum: 0, maximum: MAX_MONEY_IN_CENTS, example: 1500 },
+    priceInCents: { type: 'integer', minimum: 0, maximum: MAX_MONEY_IN_CENTS },
     promotionalPriceInCents: { type: 'integer', nullable: true, minimum: 0, maximum: MAX_MONEY_IN_CENTS },
     imageUrl: { type: 'string', nullable: true, format: 'uri' },
     volume: { type: 'string', nullable: true },
@@ -239,7 +238,6 @@ export const idempotencyHeadersJsonSchema = {
       minLength: 8,
       maxLength: 200,
       description: 'Chave opcional para impedir criação duplicada do mesmo pedido.',
-      example: 'checkout-9b24e640-1234'
     }
   }
 } as const;
