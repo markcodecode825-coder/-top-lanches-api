@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build, lint and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Show runtime versions
+        run: |
+          node --version
+          npm --version
+          docker --version
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/top_lanches_ci
+          JWT_SECRET: ci-secret-with-more-than-thirty-two-characters
+          ADMIN_EMAIL: admin@example.com
+          ADMIN_PASSWORD: change-me
+          CORS_ORIGINS: http://localhost:3000
+          BUSINESS_TIMEZONE: America/Fortaleza
+
+      - name: TypeScript build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/top_lanches_ci
+          JWT_SECRET: ci-secret-with-more-than-thirty-two-characters
+          ADMIN_EMAIL: admin@example.com
+          ADMIN_PASSWORD: change-me
+          CORS_ORIGINS: http://localhost:3000
+          BUSINESS_TIMEZONE: America/Fortaleza
+
+      - name: Lint
+        run: npm run lint
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/top_lanches_ci
+          JWT_SECRET: ci-secret-with-more-than-thirty-two-characters
+          ADMIN_EMAIL: admin@example.com
+          ADMIN_PASSWORD: change-me
+          CORS_ORIGINS: http://localhost:3000
+          BUSINESS_TIMEZONE: America/Fortaleza
+
+      - name: Tests with PostgreSQL Testcontainers
+        run: npm test
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: 'false'

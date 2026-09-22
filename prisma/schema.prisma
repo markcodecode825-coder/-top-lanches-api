@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ServiceModeCode {
+  delivery
+  pickup
+  dine_in
+}
+
+enum PaymentMethodCode {
+  PIX
+  CASH
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELED
+}
+
+enum WhatsappMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model Admin {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  name         String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Business {
+  id                String          @id @default(uuid()) @db.Uuid
+  name              String
+  whatsapp          String
+  whatsappFormatted String
+  instagram         String
+  address           String
+  timezone          String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  operatingHours    OperatingHour[]
+}
+
+model OperatingHour {
+  id        String   @id @default(uuid()) @db.Uuid
+  businessId String  @db.Uuid
+  dayOfWeek Int
+  open      String
+  close     String
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  business  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, dayOfWeek, priority])
+}
+
+model ServiceMode {
+  id        String          @id @default(uuid()) @db.Uuid
+  code      ServiceModeCode @unique
+  name      String
+  enabled   Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model PaymentMethod {
+  id        String            @id @default(uuid()) @db.Uuid
+  code      PaymentMethodCode @unique
+  name      String
+  enabled   Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model Category {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  bannerUrl   String?
+  searchTerms String[]  @default([])
+  priority    Int       @default(100)
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([active, priority, name])
+  @@index([priority])
+}
+
+model Product {
+  id                      String      @id @default(uuid()) @db.Uuid
+  name                    String
+  slug                    String      @unique
+  categoryId              String      @db.Uuid
+  description             String?
+  priceInCents            Int
+  promotionalPriceInCents Int?
+  imageUrl                String?
+  volume                  String?
+  unit                    String?
+  searchTerms             String[]    @default([])
+  available               Boolean     @default(true)
+  active                  Boolean     @default(true)
+  featured                Boolean     @default(false)
+  priority                Int         @default(100)
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+  category                Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems              OrderItem[]
+
+  @@index([categoryId])
+  @@index([available])
+  @@index([active, available])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model Order {
+  id                       String            @id @default(uuid()) @db.Uuid
+  orderNumber              String            @unique
+  idempotencyKey           String?           @unique
+  customerName             String
+  customerPhone            String?
+  serviceMode              ServiceModeCode
+  paymentMethod            PaymentMethodCode
+  cashChangeForInCents     Int?
+  notes                    String?
+  status                   OrderStatus       @default(PENDING)
+  subtotalInCents          Int
+  deliveryFeeInCents       Int?
+  totalInCents             Int
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  items                    OrderItem[]
+  address                  OrderAddress?
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([serviceMode])
+}
+
+model OrderItem {
+  id               String  @id @default(uuid()) @db.Uuid
+  orderId          String  @db.Uuid
+  productId        String  @db.Uuid
+  productName      String
+  productSlug      String
+  quantity         Int
+  unitPriceInCents Int
+  subtotalInCents  Int
+  order            Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model OrderAddress {
+  id           String  @id @default(uuid()) @db.Uuid
+  orderId      String  @unique @db.Uuid
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  reference    String?
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderCounter {
+  id    String @id
+  value Int    @default(0)
+}
+
+model WhatsappWebhookEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  payloadHash  String   @unique
+  object       String?
+  messageCount Int      @default(0)
+  statusCount  Int      @default(0)
+  receivedAt   DateTime @default(now())
+
+  @@index([receivedAt])
+}
+
+model WhatsappMessage {
+  id                String                   @id @default(uuid()) @db.Uuid
+  providerMessageId String                   @unique
+  direction         WhatsappMessageDirection
+  phone             String?
+  type              String
+  text              String?                  @db.Text
+  templateName      String?
+  status            String?
+  providerTimestamp DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([direction, createdAt])
+  @@index([phone, createdAt])
+  @@index([status])
+}
