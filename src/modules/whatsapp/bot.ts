@@ -5,6 +5,15 @@ import { createOrder } from '../orders/service';
 import { effectivePriceInCents } from '../products/presenter';
 import { persistOutboundMessage } from './persistence';
 import {
+  botMessage,
+  businessClosedMessage,
+  cashBelowTotalMessage,
+  genericOrderErrorMessage,
+  modalityUnavailableMessage,
+  orderConfirmedMessage,
+  quantityPrompt
+} from './messages';
+import {
   normalizePhoneForWhatsApp,
   sendTextMessage,
   type WhatsAppWebhookMessage
@@ -391,7 +400,7 @@ async function advanceToAddressOrConfirm(
 ): Promise<void> {
   if (state.serviceMode === 'delivery') {
     await saveConversation(prisma, phone, 'ADDRESS_STREET', state, messageId);
-    await sendBotText(prisma, phone, 'Digite o nome da rua do endereço de entrega.');
+    await sendBotText(prisma, phone, botMessage('askStreet', messageId));
     return;
   }
 
@@ -419,13 +428,13 @@ async function handleServiceMode(
   const configured = await prisma.serviceMode.findUnique({ where: { code: mode } });
   if (!configured?.enabled) {
     await saveConversation(prisma, phone, 'SERVICE_MODE', state, messageId);
-    await sendBotText(prisma, phone, 'Essa modalidade está indisponível no momento.\n\n' + serviceModePrompt());
+    await sendBotText(prisma, phone, modalityUnavailableMessage(serviceModePrompt(), messageId));
     return;
   }
 
   state.serviceMode = mode;
   await saveConversation(prisma, phone, 'CUSTOMER_NAME', state, messageId);
-  await sendBotText(prisma, phone, 'Qual é o seu nome?');
+  await sendBotText(prisma, phone, botMessage('askName', messageId));
 }
 
 async function handleCustomerName(
@@ -438,7 +447,7 @@ async function handleCustomerName(
   const name = text.trim();
   if (name.length < 1 || name.length > 120) {
     await saveConversation(prisma, phone, 'CUSTOMER_NAME', state, messageId);
-    await sendBotText(prisma, phone, 'Digite um nome válido com até 120 caracteres.');
+    await sendBotText(prisma, phone, botMessage('invalidName', messageId));
     return;
   }
 
@@ -527,7 +536,7 @@ async function handleProduct(
 
   state.selectedProductId = product.id;
   await saveConversation(prisma, phone, 'QUANTITY', state, messageId);
-  await sendBotText(prisma, phone, 'Quantas unidades de ' + product.name + ' você deseja? Digite de 1 a 99.');
+  await sendBotText(prisma, phone, quantityPrompt(product.name, messageId));
 }
 
 async function handleQuantity(
@@ -540,7 +549,7 @@ async function handleQuantity(
   const quantity = parseMenuChoice(text, 99);
   if (!quantity || quantity < 1 || !state.selectedProductId) {
     await saveConversation(prisma, phone, 'QUANTITY', state, messageId);
-    await sendBotText(prisma, phone, 'Digite uma quantidade entre 1 e 99.');
+    await sendBotText(prisma, phone, botMessage('invalidQuantity', messageId));
     return;
   }
 
@@ -548,7 +557,7 @@ async function handleQuantity(
   if (!product?.active || !product.available) {
     state.selectedProductId = undefined;
     await saveConversation(prisma, phone, 'CATEGORY', state, messageId);
-    await sendBotText(prisma, phone, 'Esse produto ficou indisponível. Escolha outra opção.\n\n' + (await categoryPrompt(prisma)));
+    await sendBotText(prisma, phone, botMessage('productUnavailable', messageId) + '\n\n' + (await categoryPrompt(prisma)));
     return;
   }
 
@@ -581,7 +590,7 @@ async function handleCartAction(
   if (choice === 2) {
     if (state.cart.length === 0) {
       await saveConversation(prisma, phone, 'CATEGORY', state, messageId);
-      await sendBotText(prisma, phone, 'Seu carrinho está vazio.\n\n' + (await categoryPrompt(prisma)));
+      await sendBotText(prisma, phone, botMessage('emptyCart', messageId) + '\n\n' + (await categoryPrompt(prisma)));
       return;
     }
     await saveConversation(prisma, phone, 'PAYMENT', state, messageId);
@@ -598,7 +607,7 @@ async function handleCartAction(
   if (choice === 4) {
     if (state.cart.length === 0) {
       await saveConversation(prisma, phone, 'CART_ACTION', state, messageId);
-      await sendBotText(prisma, phone, 'Seu carrinho está vazio.\n\n' + cartActionPrompt());
+      await sendBotText(prisma, phone, botMessage('emptyCart', messageId) + '\n\n' + cartActionPrompt());
       return;
     }
 
@@ -661,7 +670,7 @@ async function handlePayment(
   const configured = await prisma.paymentMethod.findUnique({ where: { code: method } });
   if (!configured?.enabled) {
     await saveConversation(prisma, phone, 'PAYMENT', state, messageId);
-    await sendBotText(prisma, phone, 'Essa forma de pagamento está indisponível.\n\n' + paymentPrompt());
+    await sendBotText(prisma, phone, botMessage('paymentUnavailable', messageId) + '\n\n' + paymentPrompt());
     return;
   }
 
@@ -671,7 +680,7 @@ async function handlePayment(
     await sendBotText(
       prisma,
       phone,
-      'Precisa de troco? Digite o valor que vai pagar, por exemplo 50 ou 50,00. Se não precisar, digite SEM TROCO.'
+      botMessage('askCashChange', messageId)
     );
     return;
   }
@@ -690,7 +699,7 @@ async function handleCashChange(
   const parsed = parseCashChangeText(text);
   if (!parsed) {
     await saveConversation(prisma, phone, 'CASH_CHANGE', state, messageId);
-    await sendBotText(prisma, phone, 'Valor inválido. Digite, por exemplo, 50 ou 50,00. Para não pedir troco, digite SEM TROCO.');
+    await sendBotText(prisma, phone, botMessage('invalidCashChange', messageId));
     return;
   }
 
@@ -707,7 +716,7 @@ async function handleCashChange(
     await sendBotText(
       prisma,
       phone,
-      'O valor informado é menor que o total de ' + formatCents(total) + '. Informe um valor igual ou maior, ou digite SEM TROCO.'
+      cashBelowTotalMessage(formatCents(total), messageId)
     );
     return;
   }
@@ -734,43 +743,43 @@ async function handleAddress(
   if (step === 'ADDRESS_STREET') {
     if (!value || value.length > 180) {
       await saveConversation(prisma, phone, step, state, messageId);
-      await sendBotText(prisma, phone, 'Digite uma rua válida com até 180 caracteres.');
+      await sendBotText(prisma, phone, botMessage('invalidStreet', messageId));
       return;
     }
     state.address.street = value;
     await saveConversation(prisma, phone, 'ADDRESS_NUMBER', state, messageId);
-    await sendBotText(prisma, phone, 'Digite o número do endereço.');
+    await sendBotText(prisma, phone, botMessage('askNumber', messageId));
     return;
   }
 
   if (step === 'ADDRESS_NUMBER') {
     if (!value || value.length > 30) {
       await saveConversation(prisma, phone, step, state, messageId);
-      await sendBotText(prisma, phone, 'Digite um número válido com até 30 caracteres.');
+      await sendBotText(prisma, phone, botMessage('invalidNumber', messageId));
       return;
     }
     state.address.number = value;
     await saveConversation(prisma, phone, 'ADDRESS_NEIGHBORHOOD', state, messageId);
-    await sendBotText(prisma, phone, 'Digite o bairro.');
+    await sendBotText(prisma, phone, botMessage('askNeighborhood', messageId));
     return;
   }
 
   if (step === 'ADDRESS_NEIGHBORHOOD') {
     if (!value || value.length > 120) {
       await saveConversation(prisma, phone, step, state, messageId);
-      await sendBotText(prisma, phone, 'Digite um bairro válido com até 120 caracteres.');
+      await sendBotText(prisma, phone, botMessage('invalidNeighborhood', messageId));
       return;
     }
     state.address.neighborhood = value;
     await saveConversation(prisma, phone, 'ADDRESS_COMPLEMENT', state, messageId);
-    await sendBotText(prisma, phone, 'Digite o complemento. Se não houver, digite 0.');
+    await sendBotText(prisma, phone, botMessage('askComplement', messageId));
     return;
   }
 
   if (step === 'ADDRESS_COMPLEMENT') {
     state.address.complement = skippedOptionalField(value) ? undefined : value.slice(0, 180);
     await saveConversation(prisma, phone, 'ADDRESS_REFERENCE', state, messageId);
-    await sendBotText(prisma, phone, 'Digite um ponto de referência. Se não houver, digite 0.');
+    await sendBotText(prisma, phone, botMessage('askReference', messageId));
     return;
   }
 
@@ -789,7 +798,7 @@ async function handleConfirm(
   const choice = parseMenuChoice(text, 2);
   if (choice === 2) {
     await resetConversation(prisma, phone, messageId);
-    await sendBotText(prisma, phone, 'Pedido cancelado.\n\n' + serviceModePrompt());
+    await sendBotText(prisma, phone, botMessage('orderCanceled', messageId) + '\n\n' + serviceModePrompt());
     return;
   }
 
@@ -801,7 +810,7 @@ async function handleConfirm(
 
   if (!state.customerName || !state.serviceMode || !state.paymentMethod || state.cart.length === 0) {
     await resetConversation(prisma, phone, messageId);
-    await sendBotText(prisma, phone, 'A conversa perdeu informações necessárias. Vamos começar novamente.\n\n' + serviceModePrompt());
+    await sendBotText(prisma, phone, botMessage('lostContext', messageId) + '\n\n' + serviceModePrompt());
     return;
   }
 
@@ -810,7 +819,7 @@ async function handleConfirm(
     (!state.address?.street || !state.address.number || !state.address.neighborhood)
   ) {
     await saveConversation(prisma, phone, 'ADDRESS_STREET', state, messageId);
-    await sendBotText(prisma, phone, 'Precisamos confirmar o endereço. Digite o nome da rua.');
+    await sendBotText(prisma, phone, botMessage('confirmAddressAgain', messageId));
     return;
   }
 
@@ -844,13 +853,7 @@ async function handleConfirm(
     await sendBotText(
       prisma,
       phone,
-      [
-        'Pedido confirmado.',
-        'Número: ' + result.order.orderNumber,
-        'Total: ' + formatCents(result.order.totalInCents),
-        '',
-        'A Top Lanches recebeu seu pedido.'
-      ].join('\n')
+      orderConfirmedMessage(result.order.orderNumber, formatCents(result.order.totalInCents), messageId)
     );
   } catch (error) {
     if (error instanceof AppError) {
@@ -859,7 +862,7 @@ async function handleConfirm(
         await sendBotText(
           prisma,
           phone,
-          'Um item do pedido não está mais disponível. Revise o carrinho antes de continuar.\n\n' +
+          botMessage('itemUnavailableAtConfirm', messageId) + '\n\n' +
             (await cartSummary(prisma, state)) +
             '\n\n' +
             cartActionPrompt()
@@ -869,12 +872,12 @@ async function handleConfirm(
 
       if (error.code === 'BUSINESS_CLOSED') {
         await saveConversation(prisma, phone, 'CONFIRM', state, messageId);
-        await sendBotText(prisma, phone, error.message + '\nO pedido ficou salvo nesta conversa para você tentar novamente depois.');
+        await sendBotText(prisma, phone, businessClosedMessage(error.message, messageId));
         return;
       }
 
       await saveConversation(prisma, phone, 'CONFIRM', state, messageId);
-      await sendBotText(prisma, phone, 'Não foi possível concluir o pedido: ' + error.message + '\nDigite 1 para tentar novamente ou 2 para cancelar.');
+      await sendBotText(prisma, phone, genericOrderErrorMessage(error.message, messageId));
       return;
     }
     throw error;
@@ -892,7 +895,7 @@ export async function handleWhatsAppBotMessage(
     await sendBotText(
       prisma,
       phone,
-      'No momento, o atendimento automático aceita mensagens de texto. Digite MENU para iniciar.'
+      botMessage('nonText', message.id)
     );
     return;
   }
