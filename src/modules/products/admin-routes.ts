@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { adminProductsQueryJsonSchema, idParamsSchema, productBodyJsonSchema, productCreateBodyJsonSchema } from '../../docs/request-schemas';
-import { paginatedProductsResponseJsonSchema, productResponseJsonSchema, standardErrorResponses } from '../../docs/response-schemas';
+import { noContentResponseJsonSchema, paginatedProductsResponseJsonSchema, productResponseJsonSchema, standardErrorResponses } from '../../docs/response-schemas';
 import { AppError } from '../../errors/app-error';
 import { clampLimit, paginationMeta } from '../../utils/pagination';
 import { slugify } from '../../utils/slug';
@@ -70,7 +70,7 @@ const adminProductRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.delete('/products/:id', {
-    schema: { tags: ['admin'], security: [{ bearerAuth: [] }], summary: 'Desativa logicamente um produto', params: idParamsSchema, response: { ...standardErrorResponses } }
+    schema: { tags: ['admin'], security: [{ bearerAuth: [] }], summary: 'Desativa logicamente um produto', params: idParamsSchema, response: { 204: noContentResponseJsonSchema, ...standardErrorResponses } }
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const existing = await app.prisma.product.findUnique({ where: { id } });
