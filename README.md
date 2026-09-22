@@ -17,7 +17,7 @@ A aplicação separa HTTP, validação, serviços, persistência e regras de neg
 - `src/database`: Prisma Client.
 - `src/errors`: erro de aplicação e tratamento global.
 - `src/utils`: dinheiro, slug, normalização, paginação e geração de links do WhatsApp.
-- `src/modules/whatsapp`: webhook, assinatura, envio de texto/template e integração com a Cloud API.
+- `src/modules/whatsapp`: webhook, assinatura, envio de texto/template, sessões e bot automático de pedidos pela Cloud API.
 - `prisma`: schema, migration e seed.
 - `tests`: testes unitários e de integração.
 
@@ -94,6 +94,8 @@ TRUST_PROXY=false
 
 # WhatsApp Business Platform / Cloud API
 WHATSAPP_CLOUD_ENABLED=false
+WHATSAPP_BOT_ENABLED=false
+WHATSAPP_BOT_SESSION_TTL_MINUTES=30
 WHATSAPP_GRAPH_API_VERSION=v26.0
 WHATSAPP_VERIFY_TOKEN=
 WHATSAPP_APP_SECRET=
@@ -339,7 +341,7 @@ A integração oficial é opcional e vem desativada no `.env.example`. Para habi
 2. Tenha uma WhatsApp Business Account (WABA) e um número de telefone registrado na Cloud API.
 3. Crie um token de verificação próprio e informe-o em `WHATSAPP_VERIFY_TOKEN`.
 4. Informe `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_WABA_ID`. O token usado para enviar mensagens precisa da permissão `whatsapp_business_messaging`; para assinar a WABA, use credencial com `whatsapp_business_management`.
-5. Defina `WHATSAPP_CLOUD_ENABLED=true`.
+5. Defina `WHATSAPP_CLOUD_ENABLED=true` e `WHATSAPP_BOT_ENABLED=true` para ativar o atendimento automático.
 6. Publique a API em HTTPS.
 7. Na configuração de Webhooks da Meta, use como callback `https://SEU-DOMINIO/api/v1/whatsapp/webhook` e o mesmo valor de `WHATSAPP_VERIFY_TOKEN`.
 8. Na área de Webhooks da Meta, assine o campo `messages`.
@@ -362,6 +364,8 @@ Envio manual protegido por JWT:
 Telefones locais de 10 ou 11 dígitos recebem o DDI de `WHATSAPP_DEFAULT_COUNTRY_CODE` antes do envio. O padrão inicial é `55`; altere a variável se a operação mudar de país.
 
 `WHATSAPP_GRAPH_API_VERSION` é configurável para permitir atualização da versão da Graph API sem mudança de código. Nesta revisão do projeto, o valor padrão é `v26.0`. `WHATSAPP_HTTP_TIMEOUT_MS` limita chamadas externas à Meta e evita requisições penduradas indefinidamente.
+
+O bot automático usa o cardápio e as regras já cadastradas no banco. O fluxo cobre Delivery, Retirada e Presencial, carrinho, quantidade, Pix ou Dinheiro, troco, nome, endereço estruturado somente no Delivery e confirmação antes de criar o pedido. As sessões são persistidas e expiram conforme `WHATSAPP_BOT_SESSION_TTL_MINUTES`.
 
 Um guia específico de configuração está em `docs/WHATSAPP-CLOUD-API.md`.
 
