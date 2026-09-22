@@ -80,16 +80,18 @@ export async function createOrder(
     if (existing) return { order: existing, reused: true };
   }
 
-  if (!isServiceModeCode(input.serviceMode)) {
+  const serviceModeCode = input.serviceMode;
+  const paymentMethodCode = input.paymentMethod;
+  if (!isServiceModeCode(serviceModeCode)) {
     throw new AppError('INVALID_SERVICE_MODE', 422, 'Modalidade de atendimento inválida');
   }
-  if (!isPaymentMethodCode(input.paymentMethod)) {
+  if (!isPaymentMethodCode(paymentMethodCode)) {
     throw new AppError('INVALID_PAYMENT_METHOD', 422, 'Forma de pagamento inválida');
   }
 
   const [serviceMode, paymentMethod, status, acceptWhenClosed] = await Promise.all([
-    prisma.serviceMode.findUnique({ where: { code: input.serviceMode } }),
-    prisma.paymentMethod.findUnique({ where: { code: input.paymentMethod } }),
+    prisma.serviceMode.findUnique({ where: { code: serviceModeCode } }),
+    prisma.paymentMethod.findUnique({ where: { code: paymentMethodCode } }),
     getBusinessStatus(prisma),
     isAcceptingOrdersWhenClosed(prisma)
   ]);
@@ -160,7 +162,7 @@ export async function createOrder(
   }
 
   let cashChangeForInCents: number | null = null;
-  if (input.paymentMethod === 'CASH' && input.cashChangeFor !== undefined) {
+  if (paymentMethodCode === 'CASH' && input.cashChangeFor !== undefined) {
     if (typeof input.cashChangeFor !== 'number' && typeof input.cashChangeFor !== 'string') {
       throw new AppError('VALIDATION_ERROR', 422, 'Valor de troco inválido');
     }
@@ -188,15 +190,15 @@ export async function createOrder(
           idempotencyKey: idempotencyKey ?? null,
           customerName: input.customer.name,
           customerPhone: input.customer.phone ?? null,
-          serviceMode: input.serviceMode,
-          paymentMethod: input.paymentMethod,
-          cashChangeForInCents: input.paymentMethod === 'CASH' ? cashChangeForInCents : null,
+          serviceMode: serviceModeCode,
+          paymentMethod: paymentMethodCode,
+          cashChangeForInCents: paymentMethodCode === 'CASH' ? cashChangeForInCents : null,
           notes: input.notes ?? null,
           subtotalInCents,
           deliveryFeeInCents,
           totalInCents,
           items: { create: snapshots },
-          ...(input.serviceMode === 'delivery' && input.address
+          ...(serviceModeCode === 'delivery' && input.address
             ? {
                 address: {
                   create: {
