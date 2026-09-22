@@ -64,7 +64,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    if (error.statusCode === 429) {
+    const statusCode =
+      typeof error === 'object' && error !== null && 'statusCode' in error
+        ? Number((error as { statusCode?: unknown }).statusCode)
+        : undefined;
+
+    if (statusCode === 429) {
       return reply.status(429).send({
         error: {
           code: 'RATE_LIMIT_EXCEEDED',
@@ -75,12 +80,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    if (error.statusCode === 400 || error.statusCode === 413) {
-      return reply.status(error.statusCode).send({
+    if (statusCode === 400 || statusCode === 413) {
+      return reply.status(statusCode).send({
         error: {
           code: 'VALIDATION_ERROR',
-          message: error.statusCode === 413 ? 'Payload excede o limite permitido' : 'Requisição inválida',
-          statusCode: error.statusCode,
+          message: statusCode === 413 ? 'Payload excede o limite permitido' : 'Requisição inválida',
+          statusCode,
           requestId: request.id
         }
       });
