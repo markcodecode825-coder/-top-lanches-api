@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient, type Product } from '@prisma/client';
+import type { Prisma, PrismaClient, Product } from '@prisma/client';
 import { AppError } from '../../errors/app-error';
 import { decimalInputToCents, formatCents } from '../../utils/money';
 import { createOrder } from '../orders/service';
