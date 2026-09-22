@@ -18,7 +18,15 @@ A integração vem desativada por padrão e não envia mensagens automaticamente
 - registro do Phone Number ID com PIN de seis dígitos;
 - timeout configurável para chamadas à Graph API;
 - credenciais somente por variáveis de ambiente;
-- nenhuma resposta automática/bot inventada.
+- bot automático de pedidos com sessão persistida no PostgreSQL;
+- fluxo de Delivery, Retirada e Presencial;
+- seleção de categoria, produto, quantidade e carrinho;
+- Pix ou Dinheiro, incluindo validação de troco;
+- coleta de nome e, somente no Delivery, endereço estruturado;
+- confirmação final antes de criar o pedido;
+- criação idempotente do pedido usando o identificador da mensagem da Meta;
+- bloqueio de pedidos fora do horário quando a configuração do estabelecimento não permite;
+- nenhuma solicitação de mesa no fluxo presencial.
 
 ## 2. Variáveis de ambiente
 
@@ -26,6 +34,8 @@ Preencha no servidor:
 
 ```dotenv
 WHATSAPP_CLOUD_ENABLED=true
+WHATSAPP_BOT_ENABLED=true
+WHATSAPP_BOT_SESSION_TTL_MINUTES=30
 WHATSAPP_GRAPH_API_VERSION=v26.0
 WHATSAPP_VERIFY_TOKEN=gere-um-token-longo-e-aleatorio
 WHATSAPP_APP_SECRET=app-secret-da-meta
@@ -189,17 +199,38 @@ Authorization: Bearer SEU_JWT_ADMIN
 
 A resposta informa apenas flags como `accessTokenConfigured` e `appSecretConfigured`. Os valores secretos nunca são retornados.
 
-## 12. O que ainda não é um bot automático
+## 12. Bot automático de pedidos
 
-A integração de transporte está pronta, mas nenhuma lógica de conversa foi inventada. Por exemplo, receber "cardápio" não gera uma resposta automática ainda.
+Quando `WHATSAPP_BOT_ENABLED=true`, cada nova mensagem de texto recebida pelo webhook entra no fluxo de atendimento automático.
 
-Uma camada de atendimento pode ser adicionada depois para usar os módulos existentes de:
+Fluxo:
 
-- status de funcionamento;
-- cardápio;
-- pesquisa;
-- disponibilidade;
-- criação de pedidos;
-- consulta de pedidos.
+```text
+Oi
+→ Delivery / Retirada / Presencial
+→ Categoria
+→ Produto
+→ Quantidade
+→ Adicionar outro produto ou finalizar
+→ Pix / Dinheiro
+→ Troco, quando necessário
+→ Nome
+→ Endereço, somente no Delivery
+→ Confirmação
+→ Pedido criado na API
+```
 
-Isso deve ser definido como um fluxo de negócio separado para não misturar conexão com WhatsApp e regras do atendimento.
+O bot usa sempre os produtos, preços, disponibilidade, modalidades, formas de pagamento e horários que estão no banco. Ele não inventa preço, produto, adicional, taxa de entrega ou forma de pagamento.
+
+As sessões ficam salvas em `WhatsappConversation` e expiram após o período configurado em `WHATSAPP_BOT_SESSION_TTL_MINUTES`. O cliente pode digitar `cancelar` para encerrar o pedido atual.
+
+## 13. O que ainda depende da Meta / dono do número
+
+O código não consegue autorizar sozinho um número que pertence ao estabelecimento. Para colocar a integração real em produção ainda é necessário que o responsável pela conta Meta:
+
+1. autorize o aplicativo na conta empresarial;
+2. vincule e confirme o número real da Top Lanches;
+3. disponibilize `Phone Number ID`, `WABA ID`, `App Secret` e um token de acesso adequado;
+4. confirme eventuais códigos ou verificações de propriedade exigidos pela Meta.
+
+Depois disso, basta configurar as credenciais no Railway, cadastrar o webhook, assinar `messages` e ativar `WHATSAPP_CLOUD_ENABLED=true` e `WHATSAPP_BOT_ENABLED=true`.
