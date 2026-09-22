@@ -1,9 +1,12 @@
 import type { z } from 'zod';
 import { AppError } from '../errors/app-error';
 
-export function parseInput<T>(schema: z.ZodType<T>, input: unknown): T {
+export function parseInput<TSchema extends z.ZodTypeAny>(
+  schema: TSchema,
+  input: unknown
+): z.output<TSchema> {
   const result = schema.safeParse(input);
-  if (result.success) return result.data;
+  if (result.success) return result.data as z.output<TSchema>;
 
   throw new AppError(
     'VALIDATION_ERROR',
