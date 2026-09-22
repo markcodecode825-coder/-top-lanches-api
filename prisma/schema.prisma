@@ -225,3 +225,18 @@ model WhatsappMessage {
   @@index([phone, createdAt])
   @@index([status])
 }
+
+
+model WhatsappConversation {
+  id            String   @id @default(uuid()) @db.Uuid
+  phone         String   @unique
+  state         String
+  data          Json
+  lastMessageId String?
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([expiresAt])
+  @@index([updatedAt])
+}
