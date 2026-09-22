@@ -23,6 +23,8 @@ export default async function globalSetup() {
   process.env.ORDER_RATE_LIMIT_MAX = '1000';
   process.env.SEARCH_RATE_LIMIT_MAX = '1000';
   process.env.WHATSAPP_CLOUD_ENABLED = 'true';
+  process.env.WHATSAPP_BOT_ENABLED = 'false';
+  process.env.WHATSAPP_BOT_SESSION_TTL_MINUTES = '30';
   process.env.WHATSAPP_GRAPH_API_VERSION = 'v26.0';
   process.env.WHATSAPP_VERIFY_TOKEN = 'test-whatsapp-verify-token';
   process.env.WHATSAPP_APP_SECRET = 'test-whatsapp-app-secret';
