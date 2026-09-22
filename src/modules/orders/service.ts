@@ -88,6 +88,9 @@ export async function createOrder(
   if (!isPaymentMethodCode(paymentMethodCode)) {
     throw new AppError('INVALID_PAYMENT_METHOD', 422, 'Forma de pagamento inválida');
   }
+  if (serviceModeCode === 'delivery' && !input.address) {
+    throw new AppError('VALIDATION_ERROR', 422, 'Endereço é obrigatório para delivery');
+  }
 
   const [serviceMode, paymentMethod, status, acceptWhenClosed] = await Promise.all([
     prisma.serviceMode.findUnique({ where: { code: serviceModeCode } }),
