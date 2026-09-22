@@ -499,7 +499,7 @@ async function finishOrder(
         ...(data.paymentMethod === 'CASH' && data.cashChangeFor
           ? { cashChangeFor: data.cashChangeFor }
           : {}),
-        items: data.cart,
+        items: data.cart.map((item) => ({ productId: item.productId, quantity: item.quantity })),
         ...(data.serviceMode === 'delivery'
           ? {
               address: {
@@ -899,7 +899,7 @@ export async function processWhatsAppOrderBotMessage(
 export function createTestBotMessage(
   from: string,
   text: string,
-  id = randomUUID()
+  id: string = randomUUID()
 ): WhatsAppWebhookMessage {
   return {
     id,
